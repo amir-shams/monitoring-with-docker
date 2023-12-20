@@ -1,0 +1,12 @@
+route:
+  group_by: ['alertname', 'severity']
+  receiver: 'slack'
+  group_interval: 30s
+  repeat_interval: 1m
+
+receivers:
+  - name: 'slack'
+    slack_configs:
+      - api_url: 'https://<slack-url-api>'
+        channel: '#<channel name>'
+        send_resolved: true

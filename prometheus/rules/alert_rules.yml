@@ -1,0 +1,122 @@
+groups:
+  - name: alert.rules
+    rules:
+      - alert: MachineShutdown
+        expr: up == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Machine {{ $labels.instance }} shutdown"
+          description: "The machine has shut down. Investigate immediately."
+      - alert: HighCpuUsage
+        expr: 100 * (1 - avg by (instance) (irate(node_cpu_seconds_total{mode='idle'}[5m]))) > 70
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "High CPU Usage ({{ $value }}%) on {{ $labels.instance }}"
+          description: "The average CPU usage is above 70% on {{ $labels.instance }} for the last 5 minutes."
+
+      - alert: host_disk_space_low
+        expr: (node_filesystem_avail_bytes{mountpoint="/"}  * 100) / node_filesystem_size_bytes{mountpoint="/"} < 10
+        for: 1m
+        labels:
+          severity: warning
+          alert_channel: slack
+          team: devops
+        annotations:
+          title: "Disk Usage is Low in {{ $labels.instance }}"
+          description: "Instance {{ $labels.instance }} disk usage for {{ $labels.mountpoint }} is at {{ humanize $value}}%."
+          summary: "\n- Node: {{ $labels.instance }} \n- Disk Usage: {{ humanize $value}}%"
+    
+      - alert: HostOutOfMemory
+        expr: (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 10) * on(instance) group_left (nodename) node_uname_info{nodename=~".+"}
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of memory (instance {{ $labels.instance }})
+          description: "Node memory is filling up (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+      - alert: HostOutOfDiskSpace
+        expr: ((node_filesystem_avail_bytes * 100) / node_filesystem_size_bytes < 10 and ON (instance, device, mountpoint) node_filesystem_readonly == 0) * on(instance) group_left (nodename) node_uname_info{nodename=~".+"}
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of disk space (instance {{ $labels.instance }})
+          description: "Disk is almost full (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+      - alert: HostOutOfInodes
+        expr: (node_filesystem_files_free / node_filesystem_files * 100 < 10 and ON (instance, device, mountpoint) node_filesystem_readonly == 0) * on(instance) group_left (nodename) node_uname_info{nodename=~".+"}
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host out of inodes (instance {{ $labels.instance }})
+          description: "Disk is almost running out of available inodes (< 10% left)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+      - alert: HostUnusualDiskWriteLatency
+        expr: (rate(node_disk_write_time_seconds_total[1m]) / rate(node_disk_writes_completed_total[1m]) > 0.1 and rate(node_disk_writes_completed_total[1m]) > 0) * on(instance) group_left (nodename) node_uname_info{nodename=~".+"}
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host unusual disk write latency (instance {{ $labels.instance }})
+          description: "Disk latency is growing (write operations > 100ms)\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+      - alert: HostHighCpuLoad
+        expr: (sum by (instance) (avg by (mode, instance) (rate(node_cpu_seconds_total{mode!="idle"}[2m]))) > 0.8) * on(instance) group_left (nodename) node_uname_info{nodename=~".+"}
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host high CPU load (instance {{ $labels.instance }})
+          description: "CPU load is > 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+      - alert: HostCpuHighIowait
+        expr: (avg by (instance) (rate(node_cpu_seconds_total{mode="iowait"}[5m])) * 100 > 10) * on(instance) group_left (nodename) node_uname_info{nodename=~".+"}
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Host CPU high iowait (instance {{ $labels.instance }})
+          description: "CPU iowait > 10%. A high iowait means that you are disk or network bound.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+      - alert: ElasticsearchDiskOutOfSpace
+        expr: elasticsearch_filesystem_data_available_bytes / elasticsearch_filesystem_data_size_bytes * 100 < 10
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Elasticsearch disk out of space (instance {{ $labels.instance }})
+          description: "The disk usage is over 90%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+      - alert: ElasticsearchDiskSpaceLow
+        expr: elasticsearch_filesystem_data_available_bytes / elasticsearch_filesystem_data_size_bytes * 100 < 20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: Elasticsearch disk space low (instance {{ $labels.instance }})
+          description: "The disk usage is over 80%\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+      - alert: ElasticsearchClusterRed
+        expr: elasticsearch_cluster_health_status{color="red"} == 1
+        for: 0m
+        labels:
+          severity: critical
+        annotations:
+          summary: Elasticsearch Cluster Red (instance {{ $labels.instance }})
+          description: "Elastic Cluster Red status\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+    
+      - alert: ElasticsearchClusterYellow
+        expr: elasticsearch_cluster_health_status{color="yellow"} == 1
+        for: 0m
+        labels:
+          severity: warning
+        annotations:
+          summary: Elasticsearch Cluster Yellow (instance {{ $labels.instance }})
+          description: "Elastic Cluster Yellow status\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+

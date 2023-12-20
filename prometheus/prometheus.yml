@@ -1,0 +1,58 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'runner_exporter'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['<server-ipaddress-with-exporter-port>']
+
+  - job_name: 'dev_nginx_exporter'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['<server-ipaddress-with-exporter-port>']
+
+  - job_name: 'dev_nfs_exporter'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['<server-ipaddress-with-exporter-port>']
+
+  - job_name: 'dev_nexus_exporter'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['<server-ipaddress-with-exporter-port>']
+
+  - job_name: 'dev_minio_exporter'
+    metrics_path: '/metrics'
+    static_configs:
+      - targets: ['<server-ipaddress-with-exporter-port>']
+
+  - job_name: 'elk_exporter'
+    metrics_path: '/metrics'
+    static_configs:
+            - targets: ['<server-ipaddress-with-exporter-port>']
+
+  - job_name: 'k8s_m1'
+    metrics_path: '/metrics'
+    static_configs:
+            - targets: ['<server-ipaddress-with-exporter-port>']
+
+  - job_name: 'k8s_w1'
+    metrics_path: '/metrics'
+    static_configs:
+            - targets: ['<server-ipaddress-with-exporter-port>']
+
+  - job_name: 'k8s_w2'
+    metrics_path: '/metrics'
+    static_configs:
+            - targets: ['<server-ipaddress-with-exporter-port>']
+
+  - job_name: 'k8s_w3'
+    metrics_path: '/metrics'
+    static_configs:
+            - targets: ['<server-ipaddress-with-exporter-port>']
+
+
+rule_files:
+  - 'rules/alert_rules.yml'
+
